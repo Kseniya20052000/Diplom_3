@@ -1,9 +1,12 @@
+import allure
+
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
+
 class MainPage:
-    
+
     URL = "https://stellarburgers.education-services.ru/"
 
     CONSTRUCTOR_LINK = (By.XPATH, "//p[contains(text(), 'Конструктор')]/parent::a")
@@ -23,6 +26,7 @@ class MainPage:
         self.driver = driver
         self.wait = WebDriverWait(driver, 15)
 
+    @allure.step("Клик по элементу: {locator}")
     def safe_click(self, locator):
         """Клик с прокруткой и JS-фолбэком — помогает, если элемент почти виден."""
         element = self.wait.until(EC.element_to_be_clickable(locator))
@@ -41,11 +45,11 @@ class MainPage:
 
         self.driver.execute_script("arguments[0].click();", element)
 
+    @allure.step("Закрываем модальное окно, если оно открыто")
     def close_modal_if_present(self):
         """
         Тихо закрывает модалку/оверлей, если он есть.
         Если нет — просто ничего не делает.
-        Это обязательно делать сразу после driver.get(URL), иначе клик может не сработать.
         """
         # Сначала пробуем кликнуть по оверлею (серый фон)
         overlays = self.driver.find_elements(*self.MODAL_OVERLAY)
@@ -57,7 +61,7 @@ class MainPage:
             # Ждём, пока оверлей исчезнет
             try:
                 self.wait.until(lambda d: len(d.find_elements(*self.MODAL_OVERLAY)) == 0)
-            except:
+            except Exception:
                 pass
             return True
 
@@ -70,12 +74,13 @@ class MainPage:
                 self.driver.execute_script("arguments[0].click();", close_btns[0])
             try:
                 self.wait.until(lambda d: len(d.find_elements(*self.MODAL_CONTAINER)) == 0)
-            except:
+            except Exception:
                 pass
             return True
 
         return False
 
+    @allure.step("Открываем модальное окно ингредиента")
     def open_ingredient_modal(self):
         # Страховка: убираем любую мешающую модалку перед кликом
         self.close_modal_if_present()
@@ -85,4 +90,3 @@ class MainPage:
         ingredient.click()
         # Ждём появления модального окна
         self.wait.until(lambda d: len(d.find_elements(*self.MODAL_CONTAINER)) > 0)
-
