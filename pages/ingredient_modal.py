@@ -3,9 +3,10 @@ import allure
 from selenium.webdriver.common.by import By
 
 from pages.base_page import BasePage
-from pages.main_page import MainPage
+
 
 class IngredientModal(BasePage):
+
     MODAL_CONTAINER = (By.CSS_SELECTOR, "div.Modal_modal__container__Wo2l_")
     MODAL_TITLE = (By.CSS_SELECTOR, "h2.Modal_modal__title_modified__3Hjkd")
     CLOSE_BUTTON = (By.CSS_SELECTOR, "button.Modal_modal__close__TnseK")
@@ -16,13 +17,15 @@ class IngredientModal(BasePage):
         return self
 
     @allure.step("Закрываем модалку крестиком")
-    def close(self) -> MainPage:
+    def close(self):
         self.click(self.CLOSE_BUTTON)
-        
-        main_page = MainPage(self.driver)
-        main_page.wait_header_loaded()  
-        return main_page
+        return self
 
     @allure.step("Получаем заголовок модалки")
     def get_title(self) -> str:
         return self.get_text(self.MODAL_TITLE)
+
+    @allure.step("Проверяем, что модальное окно закрылось")
+    def is_closed(self) -> bool:
+        self.wait_elements_gone(self.MODAL_CONTAINER)
+        return len(self.find_elements(self.MODAL_CONTAINER)) == 0

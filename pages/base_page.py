@@ -39,6 +39,10 @@ class BasePage:
     def wait_present(self, locator):
         return self.wait.until(EC.presence_of_element_located(locator))
 
+    @allure.step("Ожидаем присутствия всех элементов: {locator}")
+    def wait_present_all(self, locator):
+        return self.wait.until(EC.presence_of_all_elements_located(locator))
+
     @allure.step("Ждём, пока элементов не останется: {locator}")
     def wait_elements_gone(self, locator):
         return self.wait.until(lambda d: len(d.find_elements(*locator)) == 0)
