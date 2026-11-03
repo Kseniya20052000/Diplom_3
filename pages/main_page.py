@@ -22,6 +22,10 @@ class MainPage:
     TABS_CONTAINER = (By.CSS_SELECTOR, "div[style*='display: flex;']")
     ACTIVE_TAB = (By.CSS_SELECTOR, ".tab_tab__1SPyG.tab_tab_type_current__2BEPc span")
 
+    # Заголовок конструктора — однозначный признак, что мы на нужной странице
+    CONSTRUCTOR_TITLE = (By.XPATH, "//h1[text()='Соберите бургер']")
+
+
     def __init__(self, driver):
         self.driver = driver
         self.wait = WebDriverWait(driver, 15)

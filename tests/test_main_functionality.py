@@ -21,15 +21,19 @@ class TestMainFunctionality:
             main_page.driver.get(main_page.URL)
             # Страховка от модалки, которая может выскочить при открытии главной
             main_page.close_modal_if_present()
-
-        with allure.step("Дождаться загрузки шапки"):
             main_page.wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, "[class*='AppHeader']")))
 
-        with allure.step("Кликнуть по «Конструктор»"):
+        with allure.step("Перейти в «Лента Заказов», чтобы уйти со страницы конструктора"):
+            main_page.safe_click(main_page.FEED_LINK)
+            main_page.wait.until(lambda d: "feed" in d.current_url)
+
+        with allure.step("Кликнуть по «Конструктор» из ленты заказов"):
             main_page.safe_click(main_page.CONSTRUCTOR_LINK)
 
-        with allure.step("Проверить, что появились вкладки конструктора"):
-            main_page.wait.until(EC.visibility_of_element_located(main_page.TABS_CONTAINER))
+        with allure.step("Дождаться заголовка конструктора «Соберите бургер»"):
+            main_page.wait.until(EC.visibility_of_element_located(main_page.CONSTRUCTOR_TITLE))
+
+        with allure.step("Проверить, что появилась активная вкладка «Булки»"):
             active_tab = main_page.wait.until(EC.visibility_of_element_located(main_page.ACTIVE_TAB))
             assert active_tab.text == "Булки", f"Ожидалась вкладка 'Булки', а найдена: '{active_tab.text}'"
 
