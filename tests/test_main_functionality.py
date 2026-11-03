@@ -2,8 +2,6 @@ import allure
 import pytest
 
 from pages.main_page import MainPage
-from pages.ingredient_modal import IngredientModal
-from pages.basket_page import BasketPage
 
 
 @allure.feature("Основная функциональность (Main)")
@@ -12,8 +10,6 @@ class TestMainFunctionality:
     @allure.title("Переход в Конструктор: проверка появления вкладок")
     @pytest.mark.smoke
     def test_constructor_link_click(self, main_page):
-        # main_page уже открыт: страница загружена, модалка закрыта, шапка видна
-
         with allure.step("Перейти в «Лента Заказов», чтобы уйти со страницы конструктора"):
             main_page.go_to_feed()
 
@@ -21,9 +17,8 @@ class TestMainFunctionality:
             main_page.go_to_constructor()
 
         with allure.step("Проверить, что появилась активная вкладка «Булки»"):
-            assert main_page.get_active_tab_text() == "Булки", (
-                f"Ожидалась вкладка 'Булки', а найдена: '{main_page.get_active_tab_text()}'"
-            )
+            active_tab = main_page.get_active_tab_text()
+            assert active_tab == "Булки", f"Ожидалась вкладка 'Булки', а найдена: '{active_tab}'"
 
     @allure.title("Переход по клику на раздел «Лента Заказов»")
     @pytest.mark.smoke
@@ -41,9 +36,8 @@ class TestMainFunctionality:
             modal = main_page.open_first_ingredient_modal()
 
         with allure.step("Проверить заголовок модального окна"):
-            assert modal.get_title() == "Детали ингредиента", (
-                f"Ожидался заголовок 'Детали ингредиента', а найден: '{modal.get_title()}'"
-            )
+            title = modal.get_title()
+            assert title == "Детали ингредиента", f"Ожидался заголовок 'Детали ингредиента', а найден: '{title}'"
 
     @allure.title("Всплывающее окно закрывается кликом по крестику")
     @pytest.mark.smoke
@@ -57,10 +51,18 @@ class TestMainFunctionality:
         with allure.step("Убедиться, что модалка исчезла"):
             assert modal.is_closed(), "Модальное окно всё ещё присутствует на странице после закрытия крестиком"
 
-    @allure.title("Проверка отображения корзины (счётчики недоступны из-за стенда)")
-    @pytest.mark.skip(reason="Стенд временно недоступен из-за внешних инцидентов; проверка счётчика невозможна без реальной авторизации и бэкенда")
-    def test_basket_counter_increases_on_add(self, main_page):
-        basket = BasketPage(main_page.driver)
+    @allure.title("Счётчик ингредиента увеличивается при добавлении в корзину")
+    @pytest.mark.smoke
+    def test_ingredient_counter_increases(self, main_page):
+        with allure.step("Запомнить значение счётчика булки до добавления"):
+            before = main_page.get_first_ingredient_counter()
+            allure.attach(str(before), name="Счётчик до добавления", attachment_type=allure.attachment_type.TEXT)
 
-        with allure.step("Дождаться и проверить, что контейнер корзины отображается"):
-            assert basket.is_basket_visible(), "Контейнер корзины не отображается на странице"
+        with allure.step("Перетащить булку в корзину конструктора"):
+            main_page.add_first_bun_to_basket()
+
+        with allure.step("Проверить, что счётчик вырос на 2 (булка ставится в два слоя)"):
+            after = main_page.get_first_ingredient_counter()
+            assert after == before + 2, (
+                f"Счётчик булки должен вырасти с {before} до {before + 2}, а он равен {after}"
+            )

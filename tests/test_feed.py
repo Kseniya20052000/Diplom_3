@@ -1,63 +1,69 @@
 import allure
 import pytest
 
-from pages.main_page import MainPage
-from pages.feed_page import FeedPage
-
 
 @allure.feature("Лента заказов (Feed)")
 class TestFeed:
 
-    @allure.title("Проверка: счётчик «Выполнено за всё время» отображается на ленте заказов")
-    @pytest.mark.skip(reason="Проверка видимости элемента; изменение значения невозможно без авторизации")
-    def test_feed_counter_all_time_visible(self, main_page):
-        with allure.step("Перейти в раздел «Лента Заказов»"):
-            feed = main_page.go_to_feed()
+    @allure.title("Счётчик «Выполнено за всё время» увеличивается после оформления заказа")
+    def test_feed_counter_all_time_increases(self, main_page):
+        main = main_page
 
-        with allure.step("Дождаться загрузки ленты и получить значения счётчиков"):
+        with allure.step("Перейти в ленту заказов и запомнить значение счётчика"):
+            feed = main.go_to_feed()
             values = feed.get_counter_values()
-            assert len(values) >= 1, "Не найден счётчик «Выполнено за всё время»"
+            assert len(values) >= 1 and values[0].isdigit(), "Счётчик «Выполнено за всё время» не найден"
+            before = int(values[0])
+            allure.attach(str(before), name="Счётчик до заказа", attachment_type=allure.attachment_type.TEXT)
 
-        with allure.step("Прикрепить значение в отчёт и проверить, что оно числовое"):
-            value = values[0]
-            allure.attach(
-                value,
-                name="Значение «Выполнено за всё время»",
-                attachment_type=allure.attachment_type.TEXT
+        with allure.step("Собрать минимальный бургер и оформить заказ"):
+            main.go_to_constructor()
+            main.add_first_bun_to_basket()
+            order_number = main.create_order()
+            allure.attach(str(order_number), name="Номер заказа", attachment_type=allure.attachment_type.TEXT)
+
+        with allure.step("Вернуться в ленту и дождаться, когда счётчик вырастет"):
+            feed = main.go_to_feed()
+            after = feed.wait_counter_increased(0, before, timeout=60)
+            assert after > before, (
+                f"Счётчик «Выполнено за всё время» должен вырасти с {before}, а он равен {after}"
             )
-            assert value != "" and value.isdigit(), (
-                f"Значение счётчика «Выполнено за всё время» пустое или не является числом: '{value}'"
-            )
 
-    @allure.title("Проверка: счётчик «Выполнено за сегодня» отображается на ленте заказов")
-    @pytest.mark.skip(reason="Проверка видимости элемента; изменение значения невозможно без авторизации")
-    def test_feed_counter_today_visible(self, main_page):
-        with allure.step("Перейти в раздел «Лента Заказов»"):
-            feed = main_page.go_to_feed()
+    @allure.title("Счётчик «Выполнено за сегодня» увеличивается после оформления заказа")
+    def test_feed_counter_today_increases(self, main_page):
+        main = main_page
 
-        with allure.step("Дождаться счётчиков и убедиться, что их минимум два"):
+        with allure.step("Перейти в ленту заказов и запомнить значение счётчика"):
+            feed = main.go_to_feed()
             values = feed.get_counter_values()
-            assert len(values) >= 2, "Ожидается минимум 2 счётчика (за всё время и за сегодня)"
+            assert len(values) >= 2 and values[1].isdigit(), "Счётчик «Выполнено за сегодня» не найден"
+            before = int(values[1])
+            allure.attach(str(before), name="Счётчик до заказа", attachment_type=allure.attachment_type.TEXT)
 
-        with allure.step("Прикрепить значение «за сегодня» в отчёт и проверить, что оно числовое"):
-            value = values[1]
-            allure.attach(
-                value,
-                name="Значение «Выполнено за сегодня»",
-                attachment_type=allure.attachment_type.TEXT
+        with allure.step("Собрать минимальный бургер и оформить заказ"):
+            main.go_to_constructor()
+            main.add_first_bun_to_basket()
+            order_number = main.create_order()
+            allure.attach(str(order_number), name="Номер заказа", attachment_type=allure.attachment_type.TEXT)
+
+        with allure.step("Вернуться в ленту и дождаться, когда счётчик вырастет"):
+            feed = main.go_to_feed()
+            after = feed.wait_counter_increased(1, before, timeout=60)
+            assert after > before, (
+                f"Счётчик «Выполнено за сегодня» должен вырасти с {before}, а он равен {after}"
             )
-            assert value != "" and value.isdigit(), (
-                f"Значение счётчика «Выполнено за сегодня» пустое или не является числом: '{value}'"
-            )
 
-    @allure.title("Проверка: секция «В работе» присутствует на ленте заказов")
-    @pytest.mark.skip(reason="Реальное оформление заказа невозможно без авторизации; тест проверяет наличие секции «В работе»")
-    def test_section_in_work_exists(self, main_page):
-        with allure.step("Перейти в раздел «Лента Заказов»"):
-            feed = main_page.go_to_feed()
+    @allure.title("Оформленный заказ появляется в ленте заказов")
+    def test_order_appears_in_feed(self, main_page):
+        main = main_page
 
-        with allure.step("Проверить наличие заголовка «В работе:»"):
-            assert feed.is_in_work_section_present(), "Секция «В работе» не найдена на ленте заказов"
+        with allure.step("Собрать минимальный бургер и оформить заказ"):
+            main.go_to_constructor()
+            main.add_first_bun_to_basket()
+            order_number = main.create_order()
+            allure.attach(str(order_number), name="Номер заказа", attachment_type=allure.attachment_type.TEXT)
 
-        with allure.step("Проверить, что список заказов в секции «В работе» присутствует в DOM"):
-            assert feed.is_orders_in_work_list_present(), "Список заказов в секции «В работе» не найден"
+        with allure.step("Перейти в ленту и дождаться появления номера заказа"):
+            feed = main.go_to_feed()
+            displayed = feed.wait_order_number_visible(order_number, timeout=30)
+            allure.attach(displayed, name="Номер на ленте", attachment_type=allure.attachment_type.TEXT)

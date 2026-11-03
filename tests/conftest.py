@@ -3,10 +3,6 @@ import allure
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options as ChromeOptions
 from selenium.webdriver.firefox.options import Options as FirefoxOptions
-from selenium.webdriver.chrome.service import Service as ChromeService
-from selenium.webdriver.firefox.service import Service as FirefoxService
-from webdriver_manager.chrome import ChromeDriverManager
-from webdriver_manager.firefox import GeckoDriverManager
 
 from pages.main_page import MainPage
 
@@ -22,9 +18,7 @@ def driver(request):
 
     if browser == "chrome":
         options = ChromeOptions()
-        
-        service = ChromeService(ChromeDriverManager().install())
-        driver = webdriver.Chrome(service=service, options=options)
+        driver = webdriver.Chrome(options=options)
     else:
         options = FirefoxOptions()
         driver = webdriver.Firefox(options=options)
@@ -47,7 +41,6 @@ def main_page(driver):
     with allure.step("Открыть главную страницу"):
         page.open()
 
-    
     with allure.step("Закрыть модальное окно, если оно открыто"):
         page.close_any_modal()
 

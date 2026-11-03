@@ -27,5 +27,6 @@ class IngredientModal(BasePage):
 
     @allure.step("Проверяем, что модальное окно закрылось")
     def is_closed(self) -> bool:
-        self.wait_elements_gone(self.MODAL_CONTAINER)
-        return len(self.find_elements(self.MODAL_CONTAINER)) == 0
+        self.wait_element_hidden(self.MODAL_CONTAINER)
+        return not self.find_visible_elements(self.MODAL_CONTAINER)
+
