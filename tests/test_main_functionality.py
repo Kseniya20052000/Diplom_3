@@ -77,6 +77,8 @@ class TestMainFunctionality:
     @allure.title("Всплывающее окно закрывается кликом по крестику")
     @pytest.mark.smoke
     def test_modal_close_by_cross(self, main_page):
+        modal = IngredientModal()
+
         with allure.step("Открыть главную страницу"):
             main_page.driver.get(main_page.URL)
             main_page.close_modal_if_present()
@@ -86,21 +88,21 @@ class TestMainFunctionality:
             main_page.open_ingredient_modal()
 
         with allure.step("Закрыть модалку крестиком"):
-            main_page.close_modal_if_present()
+            main_page.safe_click(modal.CLOSE_BUTTON)
 
         with allure.step("Убедиться, что модалка исчезла"):
-            try:
-                main_page.wait.until(
-                    lambda d: (
-                        len(d.find_elements(*MainPage.MODAL_CONTAINER)) == 0 and
-                        len(d.find_elements(*MainPage.MODAL_OVERLAY)) == 0
-                    ),
-                    message="Модальное окно не исчезло из DOM"
-                )
-            except Exception:
-                
-                pass
+            main_page.wait.until(
+                lambda d: (
+                    len(d.find_elements(*modal.MODAL_CONTAINER)) == 0 and
+                    len(d.find_elements(*modal.MODAL_OVERLAY)) == 0
+                ),
+                message="Модальное окно не исчезло из DOM"
+            )
+            assert len(main_page.driver.find_elements(*modal.MODAL_CONTAINER)) == 0, (
+                "Модальное окно всё ещё присутствует на странице после закрытия крестиком"
+            )
 
+            
     @allure.title("Проверка отображения корзины (счётчики недоступны из-за стенда)")
     @pytest.mark.skip(reason="Стенд временно недоступен из-за внешних инцидентов; проверка счётчика невозможна без реальной авторизации и бэкенда")
     def test_basket_counter_increases_on_add(self, main_page):
