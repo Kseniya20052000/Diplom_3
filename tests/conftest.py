@@ -18,12 +18,12 @@ def driver(request):
 
     if browser == "chrome":
         options = ChromeOptions()
-        # options.add_argument("--headless=new")        
+         
         service = ChromeService(ChromeDriverManager().install())
         driver = webdriver.Chrome(service=service, options=options)
     else:
         options = FirefoxOptions()
-        # options.add_argument("-headless")
+        
         driver = webdriver.Firefox(options=options)
 
     driver.set_window_size(1920, 1080)

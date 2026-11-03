@@ -1,2 +1,0 @@
-[33mWARNING [0m selenium.webdriver.common.selenium_manager:selenium_manager.py:168 Metadata file C:\Users\ksyuv\.cache\selenium\se-metadata.json cannot be parsed: missing field `stats` at line 17 column 1. Using empty metadata
-[33mWARNING [0m selenium.webdriver.common.selenium_manager:selenium_manager.py:168 Metadata file C:\Users\ksyuv\.cache\selenium\se-metadata.json cannot be parsed: missing field `stats` at line 17 column 1. Using empty metadata
