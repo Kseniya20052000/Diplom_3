@@ -1,96 +1,70 @@
 import allure
 
 from selenium.webdriver.common.by import By
-from selenium.webdriver.support.wait import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
 
+from pages.base_page import BasePage
+from pages.ingredient_modal import IngredientModal
+from pages.feed_page import FeedPage
 
-class MainPage:
-
+class MainPage(BasePage):
     URL = "https://stellarburgers.education-services.ru/"
 
+    HEADER = (By.CSS_SELECTOR, "[class*='AppHeader']")
     CONSTRUCTOR_LINK = (By.XPATH, "//p[contains(text(), 'Конструктор')]/parent::a")
     FEED_LINK = (By.CSS_SELECTOR, "a[href='/feed']")
     INGREDIENTS = (By.CSS_SELECTOR, "a.BurgerIngredient_ingredient__1TVf6")
 
-    # Локаторы для модальных окон (нужны только как страховка при открытии страницы)
     MODAL_OVERLAY = (By.CSS_SELECTOR, ".Modal_modal_overlay__x2ZCr")
     CLOSE_MODAL_BTN = (By.CSS_SELECTOR, "button.Modal_modal__close__TnseK")
     MODAL_CONTAINER = (By.CSS_SELECTOR, ".Modal_modal__container__Wo2l_")
+    MODAL_TITLE = (By.CSS_SELECTOR, "h2.Modal_modal__title_modified__3Hjkd")
 
-    # Вкладки конструктора (для проверки перехода)
+    CONSTRUCTOR_TITLE = (By.XPATH, "//h1[text()='Соберите бургер']")
     TABS_CONTAINER = (By.CSS_SELECTOR, "div[style*='display: flex;']")
     ACTIVE_TAB = (By.CSS_SELECTOR, ".tab_tab__1SPyG.tab_tab_type_current__2BEPc span")
 
-    # Заголовок конструктора — однозначный признак, что мы на нужной странице
-    CONSTRUCTOR_TITLE = (By.XPATH, "//h1[text()='Соберите бургер']")
+    @allure.step("Дожидаемся загрузки шапки сайта")
+    def wait_header_loaded(self):
+        self.wait_visible(self.HEADER)
+        return self
 
-
-    def __init__(self, driver):
-        self.driver = driver
-        self.wait = WebDriverWait(driver, 15)
-
-    @allure.step("Клик по элементу: {locator}")
-    def safe_click(self, locator):
-        """Клик с прокруткой и JS-фолбэком — помогает, если элемент почти виден."""
-        element = self.wait.until(EC.element_to_be_clickable(locator))
-        try:
-            element.click()
-            return
-        except Exception:
-            pass
-
-        self.driver.execute_script("arguments[0].scrollIntoView(true);", element)
-        try:
-            element.click()
-            return
-        except Exception:
-            pass
-
-        self.driver.execute_script("arguments[0].click();", element)
-
-    @allure.step("Закрываем модальное окно, если оно открыто")
-    def close_modal_if_present(self):
-        """
-        Тихо закрывает модалку/оверлей, если он есть.
-        Если нет — просто ничего не делает.
-        """
-        # Сначала пробуем кликнуть по оверлею (серый фон)
-        overlays = self.driver.find_elements(*self.MODAL_OVERLAY)
+    @allure.step("Закрываем модальное окно (если открыто)")
+    def close_any_modal(self) -> bool:
+        # Сначала пробуем кликнуть по оверлею
+        overlays = self.find_elements(self.MODAL_OVERLAY)
         if overlays:
-            try:
-                overlays[0].click()
-            except Exception:
-                self.driver.execute_script("arguments[0].click();", overlays[0])
-            # Ждём, пока оверлей исчезнет
-            try:
-                self.wait.until(lambda d: len(d.find_elements(*self.MODAL_OVERLAY)) == 0)
-            except Exception:
-                pass
+            self.driver.execute_script("arguments[0].click();", overlays[0])
+            self.wait_elements_gone(self.MODAL_OVERLAY)
             return True
 
-        # Потом пробуем крестик
-        close_btns = self.driver.find_elements(*self.CLOSE_MODAL_BTN)
+        # Потом по кнопке закрытия
+        close_btns = self.find_elements(self.CLOSE_MODAL_BTN)
         if close_btns:
-            try:
-                close_btns[0].click()
-            except Exception:
-                self.driver.execute_script("arguments[0].click();", close_btns[0])
-            try:
-                self.wait.until(lambda d: len(d.find_elements(*self.MODAL_CONTAINER)) == 0)
-            except Exception:
-                pass
+            self.click(self.CLOSE_MODAL_BTN)  # BasePage.click уже умеет ждать и делать JS-клик
+            self.wait_elements_gone(self.MODAL_CONTAINER)
             return True
 
         return False
 
-    @allure.step("Открываем модальное окно ингредиента")
-    def open_ingredient_modal(self):
-        # Страховка: убираем любую мешающую модалку перед кликом
-        self.close_modal_if_present()
+    @allure.step("Открываем страницу «Конструктор»")
+    def go_to_constructor(self) -> "MainPage":
+        self.click(self.CONSTRUCTOR_LINK)
+        self.wait_visible(self.CONSTRUCTOR_TITLE)
+        return self
 
-        ingredients = self.wait.until(EC.presence_of_all_elements_located(self.INGREDIENTS))
-        ingredient = ingredients[0]
+    @allure.step("Открываем ленту заказов")
+    def go_to_feed(self) -> "FeedPage":
+        from pages.feed_page import FeedPage  # избегаем циклического импорта
+        self.click(self.FEED_LINK)
+        feed_page = FeedPage(self.driver)
+        feed_page.wait_for_counters_loaded()
+        return feed_page
+
+    @allure.step("Кликаем по первому ингредиенту и открываем его модалку")
+    def open_first_ingredient_modal(self) -> "IngredientModal":
+        self.close_any_modal()
+        ingredient = self.wait_clickable(self.INGREDIENTS)
         ingredient.click()
-        # Ждём появления модального окна
-        self.wait.until(lambda d: len(d.find_elements(*self.MODAL_CONTAINER)) > 0)
+        modal = IngredientModal(self.driver)
+        modal.wait_opened()
+        return modal
