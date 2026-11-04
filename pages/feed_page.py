@@ -21,6 +21,8 @@ class FeedPage(BasePage):
     # блок со статусами «Готовы» и «В работе» — по его тексту ищем номер заказа
     ORDER_STATUS_BOX = (By.CSS_SELECTOR, ".OrderFeed_orderStatusBox__1d4q2")
 
+    ORDER_LIST_ITEMS = (By.CSS_SELECTOR, "ul[class*='OrderFeed_orderList'] li")
+
     @allure.step("Ждём загрузки счётчиков на ленте заказов")
     def wait_for_counters_loaded(self):
         self.wait_visible(self.ALL_COUNTERS)
@@ -49,17 +51,15 @@ class FeedPage(BasePage):
     # ждём, пока цифры номера заказа появятся в блоке статусов ленты
     @allure.step("Ждём появления номера заказа в ленте")
     def wait_order_number_visible(self, order_number: str, timeout: int = 45) -> str:
-        """Ждёт, пока заказ с номером появится в списках ленты.
-        Сравнение нормализованное: '01389' и '1389' считаются одинаковым номером."""
-        expected = int(order_number)  # убираем ведущие нули раз и навсегда
+        """Ждёт, пока заказ с номером появится в списках ленты."""
+        expected = int(order_number)  
         wait = WebDriverWait(self.driver, timeout, poll_frequency=2)
 
 
+
         def order_found(driver):
-            items = driver.find_elements(By.CSS_SELECTOR, "ul[class*='OrderFeed_orderList'] li")
+            items = driver.find_elements(*self.ORDER_LIST_ITEMS)
             for item in items:
-                # textContent берётся из DOM напрямую — Chrome отдаёт его
-                # даже для элементов вне вьюпорта, без скроллов и пауз
                 text = (item.get_attribute("textContent") or "").strip()
                 if text.isdigit() and int(text) == expected:
                     return text
@@ -72,23 +72,6 @@ class FeedPage(BasePage):
             attachment_type=allure.attachment_type.TEXT,
         )
         return found
-
-
-        def order_found(driver):
-            try:
-                # Находим все элементы с номерами заказов
-                items = driver.find_elements(*ORDER_LIST_ITEMS)
-                # Проверяем, есть ли среди них нужный номер
-                for item in items:
-                    if item.text.strip() == order_number:
-                        return item
-                return False
-            except Exception:
-                return False
-
-        found_element = wait.until(order_found)
-        allure.attach(found_element.text, name="Найденный номер заказа в ленте", attachment_type=allure.attachment_type.TEXT)
-        return found_element.text
 
 
     # внутренний помощник — текущее значение счётчика по индексу
