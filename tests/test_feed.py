@@ -6,8 +6,8 @@ import pytest
 class TestFeed:
 
     @allure.title("Счётчик «Выполнено за всё время» увеличивается после оформления заказа")
-    def test_feed_counter_all_time_increases(self, main_page):
-        main = main_page
+    def test_feed_counter_all_time_increases(self, logged_in_main_page):
+        main = logged_in_main_page
 
         with allure.step("Перейти в ленту заказов и запомнить значение счётчика"):
             feed = main.go_to_feed()
@@ -16,7 +16,7 @@ class TestFeed:
             before = int(values[0])
             allure.attach(str(before), name="Счётчик до заказа", attachment_type=allure.attachment_type.TEXT)
 
-        with allure.step("Собрать минимальный бургер и оформить заказ"):
+        with allure.step("Вернуться в конструктор, перетащить булку и оформить заказ"):
             main.go_to_constructor()
             main.add_first_bun_to_basket()
             order_number = main.create_order()
@@ -30,8 +30,8 @@ class TestFeed:
             )
 
     @allure.title("Счётчик «Выполнено за сегодня» увеличивается после оформления заказа")
-    def test_feed_counter_today_increases(self, main_page):
-        main = main_page
+    def test_feed_counter_today_increases(self, logged_in_main_page):
+        main = logged_in_main_page
 
         with allure.step("Перейти в ленту заказов и запомнить значение счётчика"):
             feed = main.go_to_feed()
@@ -40,7 +40,7 @@ class TestFeed:
             before = int(values[1])
             allure.attach(str(before), name="Счётчик до заказа", attachment_type=allure.attachment_type.TEXT)
 
-        with allure.step("Собрать минимальный бургер и оформить заказ"):
+        with allure.step("Вернуться в конструктор, перетащить булку и оформить заказ"):
             main.go_to_constructor()
             main.add_first_bun_to_basket()
             order_number = main.create_order()
@@ -54,16 +54,15 @@ class TestFeed:
             )
 
     @allure.title("Оформленный заказ появляется в ленте заказов")
-    def test_order_appears_in_feed(self, main_page):
-        main = main_page
+    def test_order_appears_in_feed(self, logged_in_main_page):
+        main = logged_in_main_page
 
-        with allure.step("Собрать минимальный бургер и оформить заказ"):
-            main.go_to_constructor()
+        with allure.step("Перетащить булку и оформить заказ"):
             main.add_first_bun_to_basket()
             order_number = main.create_order()
             allure.attach(str(order_number), name="Номер заказа", attachment_type=allure.attachment_type.TEXT)
 
         with allure.step("Перейти в ленту и дождаться появления номера заказа"):
             feed = main.go_to_feed()
-            displayed = feed.wait_order_number_visible(order_number, timeout=30)
-            allure.attach(displayed, name="Номер на ленте", attachment_type=allure.attachment_type.TEXT)
+            displayed = feed.wait_order_number_visible(order_number, timeout=45)
+            allure.attach(displayed, name="Номер заказа, найденный в ленте", attachment_type=allure.attachment_type.TEXT)

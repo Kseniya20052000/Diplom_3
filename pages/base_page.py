@@ -62,8 +62,12 @@ source.dispatchEvent(new DragEvent('dragend',  {bubbles: true, cancelable: true,
         return [el for el in self.driver.find_elements(*locator) if el.is_displayed()]
 
     @allure.step("Ждём, пока элемент станет невидимым: {locator}")
-    def wait_element_hidden(self, locator):
-        return self.wait.until(EC.invisibility_of_element_located(locator))
+
+    def wait_element_hidden(self, locator, timeout=15):
+        from selenium.webdriver.support import expected_conditions as EC
+        wait = WebDriverWait(self.driver, timeout)
+        wait.until(EC.invisibility_of_element_located(locator))
+        return self
 
     # --- Действия ---
 
