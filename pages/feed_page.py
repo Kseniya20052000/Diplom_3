@@ -16,8 +16,6 @@ class FeedPage(BasePage):
 
     ORDER_STATUS_BOX = (By.CSS_SELECTOR, ".OrderFeed_orderStatusBox__1d4q2")
 
-    ORDER_LIST_ITEMS = (By.CSS_SELECTOR, "ul[class*='OrderFeed_orderList'] li")
-
     @allure.step("Ждём загрузки счётчиков на ленте заказов")
     def wait_for_counters_loaded(self):
         self.wait_visible(self.ALL_COUNTERS)
@@ -42,22 +40,22 @@ class FeedPage(BasePage):
     def get_orders_status_text(self) -> str:
         return self.wait_visible(self.ORDER_STATUS_BOX).text
 
-    @allure.step("Ждём появления номера заказа в ленте")
-    def wait_order_number_visible(self, order_number: str, timeout: int = 45) -> str:
+    @allure.step("Ждём появления номера заказа в списке «В работе»")
+    def wait_order_number_in_work(self, order_number: str, timeout: int = 45) -> bool:
         expected = int(order_number)
 
-        def order_found(_):
-            items = self.find_elements(self.ORDER_LIST_ITEMS)
+        def order_in_work(_):
+            items = self.find_elements(self.ORDERS_IN_WORK)
             for item in items:
                 text = (item.get_attribute("textContent") or "").strip()
                 if text.isdigit() and int(text) == expected:
-                    return text
+                    return True
             return False
 
-        found = self.wait_until(order_found, timeout=timeout, poll_frequency=2)
+        found = self.wait_until(order_in_work, timeout=timeout, poll_frequency=2)
         allure.attach(
-            f"Искали: {order_number}, нашли в ленте: {found}",
-            name="Номер заказа найден",
+            f"Искали заказ {order_number} в списке «В работе»: {'найден' if found else 'не найден'}",
+            name="Результат поиска заказа",
             attachment_type=allure.attachment_type.TEXT,
         )
         return found

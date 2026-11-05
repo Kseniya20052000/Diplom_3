@@ -67,7 +67,7 @@ class TestFeed:
                 f"Счётчик «Выполнено за сегодня» должен вырасти с {before}, а он равен {after}"
             )
 
-    @allure.title("Оформленный заказ появляется в ленте заказов")
+    @allure.title("Оформленный заказ появляется в разделе «В работе»")
     def test_order_appears_in_feed(self, driver, logged_in_main_page):
         main = logged_in_main_page
 
@@ -76,9 +76,10 @@ class TestFeed:
             order_number = main.create_order()
             allure.attach(str(order_number), name="Номер заказа", attachment_type=allure.attachment_type.TEXT)
 
-        with allure.step("Перейти в ленту и дождаться появления номера заказа"):
+        with allure.step("Перейти в ленту и дождаться появления заказа в разделе «В работе»"):
             main.click_feed_link()
             feed = FeedPage(driver)
 
-            displayed = feed.wait_order_number_visible(order_number, timeout=45)
-            allure.attach(displayed, name="Номер заказа, найденный в ленте", attachment_type=allure.attachment_type.TEXT)
+        with allure.step("Проверить, что номер заказа найден в списке «В работе»"):
+            found = feed.wait_order_number_in_work(order_number, timeout=45)
+            assert found, f"Заказ №{order_number} не появился в списке «В работе» за отведённое время"
