@@ -2,15 +2,12 @@ import allure
 
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.common.action_chains import ActionChains
 
 
 class BasePage:
-    """Базовый класс страниц. Единственное место, где напрямую используется драйвер."""
 
     URL = "https://stellarburgers.education-services.ru/"
 
-    
     JS_DRAG_AND_DROP = """
 const [source, target] = arguments;
 const dataTransfer = new DataTransfer();
@@ -22,9 +19,8 @@ source.dispatchEvent(new DragEvent('dragend',  {bubbles: true, cancelable: true,
 
     def __init__(self, driver, timeout=15):
         self.driver = driver
+        self.timeout = timeout
         self.wait = WebDriverWait(driver, timeout)
-
-    # --- Навигация ---
 
     @allure.step("Открываем страницу: {url}")
     def open(self, url=None):
@@ -34,8 +30,6 @@ source.dispatchEvent(new DragEvent('dragend',  {bubbles: true, cancelable: true,
     def wait_url_contains(self, fragment):
         self.wait.until(lambda d: fragment in d.current_url)
         return self.driver.current_url
-
-    # --- Ожидания и поиск элементов ---
 
     @allure.step("Ожидаем видимости элемента: {locator}")
     def wait_visible(self, locator):
@@ -53,6 +47,16 @@ source.dispatchEvent(new DragEvent('dragend',  {bubbles: true, cancelable: true,
     def wait_present_all(self, locator):
         return self.wait.until(EC.presence_of_all_elements_located(locator))
 
+    @allure.step("Ожидаем, что элемент станет невидимым: {locator}")
+    def wait_element_hidden(self, locator, timeout=15):
+        wait = WebDriverWait(self.driver, timeout)
+        wait.until(EC.invisibility_of_element_located(locator))
+        return self
+
+    @allure.step("Ищем один элемент: {locator}")
+    def find_element(self, locator):
+        return self.driver.find_element(*locator)
+
     @allure.step("Ищем элементы: {locator}")
     def find_elements(self, locator):
         return self.driver.find_elements(*locator)
@@ -61,19 +65,17 @@ source.dispatchEvent(new DragEvent('dragend',  {bubbles: true, cancelable: true,
     def find_visible_elements(self, locator):
         return [el for el in self.driver.find_elements(*locator) if el.is_displayed()]
 
-    @allure.step("Ждём, пока элемент станет невидимым: {locator}")
-
-    def wait_element_hidden(self, locator, timeout=15):
-        from selenium.webdriver.support import expected_conditions as EC
-        wait = WebDriverWait(self.driver, timeout)
-        wait.until(EC.invisibility_of_element_located(locator))
-        return self
-
-    # --- Действия ---
+    @allure.step("Ждём выполнения условия (таймаут {timeout} сек)")
+    def wait_until(self, condition, timeout=None, poll_frequency=0.5):
+        wait = WebDriverWait(
+            self.driver,
+            timeout if timeout is not None else self.timeout,
+            poll_frequency=poll_frequency,
+        )
+        return wait.until(condition)
 
     @allure.step("Клик по элементу: {locator}")
     def click(self, locator):
-        """Клик с прокруткой и JS-фолбэком — помогает, если элемент почти виден."""
         element = self.wait_clickable(locator)
         try:
             element.click()
@@ -88,6 +90,10 @@ source.dispatchEvent(new DragEvent('dragend',  {bubbles: true, cancelable: true,
         except Exception:
             pass
 
+        self.driver.execute_script("arguments[0].click();", element)
+
+    @allure.step("Кликаем по элементу через JavaScript")
+    def js_click(self, element):
         self.driver.execute_script("arguments[0].click();", element)
 
     @allure.step("Получаем текст элемента: {locator}")

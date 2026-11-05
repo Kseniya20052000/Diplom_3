@@ -26,5 +26,5 @@ class LoginPage(BasePage):
     @allure.step("Входим под пользователем: {email}")
     def login(self, email: str, password: str):
         self.wait_visible(self.EMAIL_INPUT).send_keys(email)
-        self.driver.find_element(*self.PASSWORD_INPUT).send_keys(password)
+        self.wait_visible(self.PASSWORD_INPUT).send_keys(password)
         self.click(self.LOGIN_BUTTON)

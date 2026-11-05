@@ -29,4 +29,3 @@ class IngredientModal(BasePage):
     def is_closed(self) -> bool:
         self.wait_element_hidden(self.MODAL_CONTAINER)
         return not self.find_visible_elements(self.MODAL_CONTAINER)
-

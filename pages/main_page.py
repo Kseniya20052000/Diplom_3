@@ -1,54 +1,46 @@
 import allure
 
-from selenium.webdriver.support.wait import WebDriverWait
+from selenium.webdriver.common.by import By
 from selenium.common.exceptions import (
     ElementClickInterceptedException,
     TimeoutException,
 )
-from selenium.webdriver.common.by import By
 
 from pages.base_page import BasePage
 from pages.feed_page import FeedPage
 from pages.ingredient_modal import IngredientModal
 from pages.login_page import LoginPage
 
+
 class MainPage(BasePage):
 
     URL = "https://stellarburgers.education-services.ru/"
 
-    # Шапка сайта — признак того, что страница загрузилась
     HEADER = (By.CSS_SELECTOR, "[class*='AppHeader']")
 
     CONSTRUCTOR_LINK = (By.XPATH, "//p[contains(text(), 'Конструктор')]/parent::a")
     FEED_LINK = (By.CSS_SELECTOR, "a[href='/feed']")
     INGREDIENTS = (By.CSS_SELECTOR, "a.BurgerIngredient_ingredient__1TVf6")
 
-    # Локаторы для модальных окон
     MODAL_OVERLAY = (By.CSS_SELECTOR, ".Modal_modal_overlay__x2ZCr")
     CLOSE_MODAL_BTN = (By.CSS_SELECTOR, "button.Modal_modal__close__TnseK")
     MODAL_CONTAINER = (By.CSS_SELECTOR, ".Modal_modal__container__Wo2l_")
 
-    # Заголовок конструктора — признак, что мы на нужной странице
     CONSTRUCTOR_TITLE = (By.XPATH, "//h1[text()='Соберите бургер']")
 
-    # Вкладки конструктора
     ACTIVE_TAB = (By.CSS_SELECTOR, ".tab_tab__1SPyG.tab_tab_type_current__2BEPc span")
 
-    # Корзина конструктора — зона, куда перетаскиваем
     BASKET_AREA = (By.CSS_SELECTOR, "section.BurgerConstructor_basket__29Cd7")
 
     ACCOUNT_LINK = (By.CSS_SELECTOR, "a[href='/account']")
-    
+
     BUN_IN_BASKET = (
         By.XPATH,
         "//div[contains(@class,'constructor-element_pos_top') and not(contains(., 'Перетяните'))]",
     )
 
-    # Кнопка «Оформить заказ»
     ORDER_BUTTON = (By.XPATH, "//button[text()='Оформить заказ']")
-    # Номер заказа в модальном окне
     ORDER_NUMBER = (By.CSS_SELECTOR, "h2.Modal_modal__title_shadow__3ikwq")
-    # Счётчик первого ингредиента (булка)
     FIRST_INGREDIENT_COUNTER = (
         By.CSS_SELECTOR,
         "a.BurgerIngredient_ingredient__1TVf6 .counter_counter__num__3nue1",
@@ -61,8 +53,6 @@ class MainPage(BasePage):
 
     @allure.step("Закрываем модальное окно (если открыто)")
     def close_any_modal(self) -> bool:
-        """Закрывает видимую модалку и дожидается её полного закрытия."""
-        # Сначала крестик — это настоящий клик пользователя и он надёжнее
         if self.find_visible_elements(self.CLOSE_MODAL_BTN):
             self.click(self.CLOSE_MODAL_BTN)
             self.wait_modal_closed()
@@ -70,7 +60,7 @@ class MainPage(BasePage):
 
         overlays = self.find_visible_elements(self.MODAL_OVERLAY)
         if overlays:
-            self.driver.execute_script("arguments[0].click();", overlays[0])
+            self.js_click(overlays[0])
             self.wait_modal_closed()
             return True
 
@@ -113,9 +103,8 @@ class MainPage(BasePage):
                     attachment_type=allure.attachment_type.TEXT,
                 )
 
-        # Запасной план
         ingredient = self.wait_clickable(self.INGREDIENTS)
-        self.driver.execute_script("arguments[0].click();", ingredient)
+        self.js_click(ingredient)
         modal = IngredientModal(self.driver)
         modal.wait_opened()
         return modal
@@ -128,16 +117,12 @@ class MainPage(BasePage):
     def is_bun_in_basket(self) -> bool:
         return bool(self.find_visible_elements(self.BUN_IN_BASKET))
 
-    # перетаскивание с проверкой результата
     @allure.step("Перетаскиваем булку в корзину конструктора (с проверкой результата)")
     def add_first_bun_to_basket(self, attempts: int = 3):
-        """Перетаскивает первую булку в корзину. Проверяет результат и ретраит:
-        после SPA-переходов элементы пересоздаются, и drag может тихо не сработать."""
         if self.is_bun_in_basket():
             return self
 
         for attempt in range(1, attempts + 1):
-            
             bun = self.wait_visible(self.INGREDIENTS)
             target = self.wait_visible(self.BASKET_AREA)
             self.drag_and_drop(bun, target)
@@ -156,7 +141,6 @@ class MainPage(BasePage):
             "Булку не удалось перетащить в корзину за 3 попытки — проверь локаторы и сценарий drag"
         )
 
-    
     @allure.step("Оформляем заказ и возвращаем его номер")
     def create_order(self) -> int:
         if not self.is_bun_in_basket():
@@ -183,11 +167,9 @@ class MainPage(BasePage):
 
     @allure.step("Дожидаемся, что оверлей модального окна перестал перекрывать страницу")
     def wait_modal_closed(self, timeout: int = 15):
-        """Оверлей должен исчезнуть из DOM или перестать отображаться.
-        Без этого клик по ингредиенту перехватывается «прозрачным» оверлеем."""
-        def overlay_gone(d):
-            overlays = d.find_elements(*self.MODAL_OVERLAY)
+        def overlay_gone(_):
+            overlays = self.find_elements(self.MODAL_OVERLAY)
             return not overlays or all(not o.is_displayed() for o in overlays)
 
-        WebDriverWait(self.driver, timeout).until(overlay_gone)
+        self.wait_until(overlay_gone, timeout=timeout)
         return self
