@@ -1,6 +1,7 @@
 import allure
 import pytest
 
+from pages.ingredient_modal import IngredientModal
 from pages.main_page import MainPage
 
 
@@ -11,7 +12,7 @@ class TestMainFunctionality:
     @pytest.mark.smoke
     def test_constructor_link_click(self, main_page):
         with allure.step("Перейти в «Лента Заказов», чтобы уйти со страницы конструктора"):
-            main_page.go_to_feed()
+            main_page.click_feed_link()
 
         with allure.step("Кликнуть по «Конструктор» из ленты заказов"):
             main_page.go_to_constructor()
@@ -24,16 +25,19 @@ class TestMainFunctionality:
     @pytest.mark.smoke
     def test_feed_link_click(self, main_page):
         with allure.step("Перейти в «Лента Заказов»"):
-            current_url = main_page.go_to_feed_url()
+            main_page.click_feed_link()
+            current_url = main_page.wait_url_contains("feed")
 
         with allure.step("Проверить URL страницы ленты"):
             assert "feed" in current_url, f"Ожидался переход в ленту заказов, текущий URL: {current_url}"
 
     @allure.title("Клик по ингредиенту открывает всплывающее окно с деталями")
     @pytest.mark.smoke
-    def test_ingredient_click_opens_modal(self, main_page):
+    def test_ingredient_click_opens_modal(self, driver, main_page):
         with allure.step("Открыть модалку ингредиента"):
-            modal = main_page.open_first_ingredient_modal()
+            main_page.click_first_ingredient()
+            modal = IngredientModal(driver)
+            modal.wait_opened()
 
         with allure.step("Проверить заголовок модального окна"):
             title = modal.get_title()
@@ -41,9 +45,11 @@ class TestMainFunctionality:
 
     @allure.title("Всплывающее окно закрывается кликом по крестику")
     @pytest.mark.smoke
-    def test_modal_close_by_cross(self, main_page):
+    def test_modal_close_by_cross(self, driver, main_page):
         with allure.step("Открыть модалку ингредиента"):
-            modal = main_page.open_first_ingredient_modal()
+            main_page.click_first_ingredient()
+            modal = IngredientModal(driver)
+            modal.wait_opened()
 
         with allure.step("Закрыть модалку крестиком"):
             modal.close()

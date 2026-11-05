@@ -7,9 +7,6 @@ from selenium.common.exceptions import (
 )
 
 from pages.base_page import BasePage
-from pages.feed_page import FeedPage
-from pages.ingredient_modal import IngredientModal
-from pages.login_page import LoginPage
 
 
 class MainPage(BasePage):
@@ -72,29 +69,19 @@ class MainPage(BasePage):
         self.wait_visible(self.CONSTRUCTOR_TITLE)
         return self
 
-    @allure.step("Открываем ленту заказов")
-    def go_to_feed(self) -> FeedPage:
+    @allure.step("Кликаем по ссылке «Лента заказов»")
+    def click_feed_link(self):
         self.click(self.FEED_LINK)
-        feed_page = FeedPage(self.driver)
-        feed_page.wait_for_counters_loaded()
-        return feed_page
 
-    @allure.step("Открываем ленту заказов и возвращаем URL")
-    def go_to_feed_url(self) -> str:
-        self.click(self.FEED_LINK)
-        return self.wait_url_contains("feed")
-
-    @allure.step("Кликаем по первому ингредиенту и открываем его модалку")
-    def open_first_ingredient_modal(self) -> IngredientModal:
+    @allure.step("Кликаем по первому ингредиенту")
+    def click_first_ingredient(self):
         last_error = None
         for attempt in range(3):
             self.close_any_modal()
             try:
                 ingredient = self.wait_clickable(self.INGREDIENTS)
                 ingredient.click()
-                modal = IngredientModal(self.driver)
-                modal.wait_opened()
-                return modal
+                return
             except ElementClickInterceptedException as e:
                 last_error = e
                 allure.attach(
@@ -105,9 +92,6 @@ class MainPage(BasePage):
 
         ingredient = self.wait_clickable(self.INGREDIENTS)
         self.js_click(ingredient)
-        modal = IngredientModal(self.driver)
-        modal.wait_opened()
-        return modal
 
     @allure.step("Получаем текст активной вкладки конструктора")
     def get_active_tab_text(self) -> str:
@@ -157,13 +141,9 @@ class MainPage(BasePage):
         text = self.wait_visible(self.FIRST_INGREDIENT_COUNTER).text.strip()
         return int(text) if text.isdigit() else 0
 
-    @allure.step("Открываем «Личный Кабинет»")
-    def open_account(self):
-        from pages.login_page import LoginPage
+    @allure.step("Кликаем по ссылке «Личный кабинет»")
+    def click_account_link(self):
         self.click(self.ACCOUNT_LINK)
-        login_page = LoginPage(self.driver)
-        login_page.wait_visible(LoginPage.EMAIL_INPUT)
-        return login_page
 
     @allure.step("Дожидаемся, что оверлей модального окна перестал перекрывать страницу")
     def wait_modal_closed(self, timeout: int = 15):

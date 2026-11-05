@@ -3,7 +3,6 @@ import allure
 from selenium.webdriver.common.by import By
 
 from pages.base_page import BasePage
-from pages.register_page import RegisterPage
 
 
 class LoginPage(BasePage):
@@ -16,12 +15,9 @@ class LoginPage(BasePage):
     REGISTER_LINK = (By.CSS_SELECTOR, "a[href='/register']")
     LOGIN_BUTTON = (By.XPATH, "//button[text()='Войти']")
 
-    @allure.step("Переходим на страницу регистрации")
-    def go_to_register(self) -> RegisterPage:
+    @allure.step("Кликаем по ссылке «Зарегистрироваться»")
+    def click_register_link(self):
         self.click(self.REGISTER_LINK)
-        register_page = RegisterPage(self.driver)
-        register_page.wait_visible(RegisterPage.NAME_INPUT)
-        return register_page
 
     @allure.step("Входим под пользователем: {email}")
     def login(self, email: str, password: str):

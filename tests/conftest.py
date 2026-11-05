@@ -3,6 +3,8 @@ import allure
 
 from pages.user_helpers import generate_unique_email, get_default_password, get_default_name
 from pages.main_page import MainPage
+from pages.login_page import LoginPage
+from pages.register_page import RegisterPage
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options as ChromeOptions
 from selenium.webdriver.firefox.options import Options as FirefoxOptions
@@ -32,16 +34,10 @@ def driver(request):
 @pytest.fixture(scope="function")
 @allure.title("Подготовка MainPage: открытие, закрытие модалки, ожидание шапки")
 def main_page(driver):
-    """
-    Базовая подготовка для тестов, которые стартуют с главной страницы.
-    Гарантирует, что страница открыта, модалка закрыта, шапка загружена.
-    Возвращает готовый экземпляр MainPage.
-    """
     page = MainPage(driver)
 
     with allure.step("Открыть главную страницу"):
         page.open()
-
 
     with allure.step("Закрыть модальное окно, если оно открыто"):
         page.close_any_modal()
@@ -53,23 +49,26 @@ def main_page(driver):
 
 
 @pytest.fixture
-def logged_in_main_page(main_page):
-    """
-    Регистрирует уникального пользователя через UI, входит в аккаунт
-    и возвращает главную страницу под залогиненным пользователем.
-    Зависит от main_page: тест стартует с уже открытой главной.
-    """
+def logged_in_main_page(driver, main_page):
     email = generate_unique_email()
     password = get_default_password()
     name = get_default_name()
 
-    with allure.step(f"Зарегистрировать пользователя {email}"):
-        login_page = main_page.open_account()
-        register_page = login_page.go_to_register()
-        login_page = register_page.register(name, email, password)
+    with allure.step(f"Открыть личный кабинет и перейти к регистрации ({email})"):
+        main_page.click_account_link()
+        login_page = LoginPage(driver)
+        login_page.wait_visible(LoginPage.EMAIL_INPUT)
+
+        login_page.click_register_link()
+        register_page = RegisterPage(driver)
+        register_page.wait_visible(RegisterPage.NAME_INPUT)
+
+        register_page.register(name, email, password)
 
     with allure.step("Войти под новым пользователем"):
-        login_page.login(email, password)
+        login_page_after_register = LoginPage(driver)
+        login_page_after_register.wait_visible(LoginPage.EMAIL_INPUT)
+        login_page_after_register.login(email, password)
 
     with allure.step("Дождаться загрузки конструктора после входа"):
         main_page.wait_header_loaded()

@@ -22,5 +22,3 @@ class RegisterPage(BasePage):
         self.wait_visible(self.PASSWORD_INPUT).send_keys(password)
         self.click(self.REGISTER_BUTTON)
         self.wait_url_contains("/login")
-        from pages.login_page import LoginPage
-        return LoginPage(self.driver)
