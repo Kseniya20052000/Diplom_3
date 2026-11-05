@@ -75,6 +75,8 @@ class FeedPage(BasePage):
 
 
     # внутренний помощник — текущее значение счётчика по индексу
+
+    @allure.step("Читаем значение счётчика №{index}")
     def _counter_value(self, index: int) -> int:
         text = self.wait_present_all(self.ALL_COUNTERS)[index].text.strip()
         return int(text) if text.isdigit() else 0
